@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { Badge, Button, Card, Col, Form, Row, Stack } from "react-bootstrap";
+import {
+  Badge,
+  Button,
+  Card,
+  Col,
+  Form,
+  Modal,
+  Row,
+  Stack,
+} from "react-bootstrap";
 import { Link } from "react-router-dom";
 import ReactSelect from "react-select";
 
@@ -12,14 +21,30 @@ type SimplifiedNote = {
   tags: Tag[];
 };
 
-type NoteListProp = {
+type NoteListProps = {
   avaliableTags: Tag[];
   notes: SimplifiedNote[];
+  onDeleteTag: (id: string) => void;
+  onUpdateTag: (id: string, label: string) => void;
 };
 
-const NoteList = ({ avaliableTags, notes }: NoteListProp) => {
+type EditTagsModalProps = {
+  show: boolean;
+  avaliableTags: Tag[];
+  handleClose: () => void;
+  onDeleteTag: (id: string) => void;
+  onUpdateTag: (id: string, label: string) => void;
+};
+
+const NoteList = ({
+  avaliableTags,
+  notes,
+  onDeleteTag,
+  onUpdateTag,
+}: NoteListProps) => {
   const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
   const [title, setTitle] = useState("");
+  const [editTagsModalIsOpen, setEditTagsModalIsOpen] = useState(false);
 
   const filteredNotes = useMemo(
     () =>
@@ -49,7 +74,12 @@ const NoteList = ({ avaliableTags, notes }: NoteListProp) => {
               <Button>Create</Button>
             </Link>
 
-            <Button variant="outline-secondary">Edit tags</Button>
+            <Button
+              onClick={() => setEditTagsModalIsOpen(true)}
+              variant="outline-secondary"
+            >
+              Edit tags
+            </Button>
           </Stack>
         </Col>
       </Row>
@@ -99,6 +129,16 @@ const NoteList = ({ avaliableTags, notes }: NoteListProp) => {
           </Col>
         ))}
       </Row>
+
+      <EditTagsModal
+        avaliableTags={avaliableTags}
+        show={editTagsModalIsOpen}
+        handleClose={() => {
+          setEditTagsModalIsOpen(false);
+        }}
+        onDeleteTag={onDeleteTag}
+        onUpdateTag={onUpdateTag}
+      />
     </>
   );
 };
@@ -132,6 +172,49 @@ const NoteCard = ({ id, title, tags }: SimplifiedNote) => {
         </Stack>
       </Card.Body>
     </Card>
+  );
+};
+
+const EditTagsModal = ({
+  avaliableTags,
+  handleClose,
+  show,
+  onDeleteTag,
+  onUpdateTag,
+}: EditTagsModalProps) => {
+  return (
+    <Modal show={show} onHide={handleClose}>
+      <Modal.Header closeButton>
+        <Modal.Title>Edit Tags</Modal.Title>
+      </Modal.Header>
+
+      <Modal.Body>
+        <Form>
+          <Stack gap={2}>
+            {avaliableTags.map((tag) => (
+              <Row key={tag.id}>
+                <Col>
+                  <Form.Control
+                    type="text"
+                    value={tag.label}
+                    onChange={(e) => onUpdateTag(tag.id, e.target.value)}
+                  />
+                </Col>
+
+                <Col xs="auto">
+                  <Button
+                    variant="outline-danger"
+                    onClick={(e) => onDeleteTag(tag.id)}
+                  >
+                    &times;
+                  </Button>
+                </Col>
+              </Row>
+            ))}
+          </Stack>
+        </Form>
+      </Modal.Body>
+    </Modal>
   );
 };
 

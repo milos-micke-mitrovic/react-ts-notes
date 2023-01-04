@@ -5,8 +5,11 @@ import { Container } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { v4 as uuidv4 } from "uuid";
 import NewNote from "./NewNote";
+import EditNote from "./EditNote";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import NoteList from "./NoteList";
+import { NoteLayout } from "./NoteLayout";
+import Note from "./Note";
 
 export type Note = {
   id: string;
@@ -57,8 +60,42 @@ const App = () => {
     });
   };
 
+  const onUpdateNote = (id: string, { tags, ...data }: NoteData) => {
+    setNotes((prevNotes: RawNote[]) => {
+      return prevNotes.map((note) => {
+        if (note.id === id) {
+          return { ...note, ...data, tagIds: tags.map((tag) => tag.id) };
+        } else {
+          return note;
+        }
+      });
+    });
+  };
+
+  const onDeleteNote = (id: string) => {
+    setNotes((prevNotes: RawNote[]) =>
+      prevNotes.filter((note) => note.id !== id)
+    );
+  };
+
   const addTag = (tag: Tag) => {
     setTags((prev: []) => [...prev, tag]);
+  };
+
+  const updateTag = (id: string, label: string) => {
+    setTags((prevTags: Tag[]) => {
+      return prevTags.map((tag) => {
+        if (tag.id === id) {
+          return { ...tag, label };
+        } else {
+          return tag;
+        }
+      });
+    });
+  };
+
+  const deleteTag = (id: string) => {
+    setTags((prevTags: Tag[]) => prevTags.filter((tag) => tag.id !== id));
   };
 
   return (
@@ -68,7 +105,12 @@ const App = () => {
           path="/"
           element={
             <h1>
-              <NoteList avaliableTags={tags} notes={notesWithTags} />
+              <NoteList
+                avaliableTags={tags}
+                notes={notesWithTags}
+                onUpdateTag={updateTag}
+                onDeleteTag={deleteTag}
+              />
             </h1>
           }
         />
@@ -84,9 +126,18 @@ const App = () => {
           }
         />
 
-        <Route path="/:id">
-          <Route index element={<h1>Show</h1>} />
-          <Route path="edit" element={<h1>Edit</h1>} />
+        <Route path="/:id" element={<NoteLayout notes={notesWithTags} />}>
+          <Route index element={<Note onDelete={onDeleteNote} />} />
+          <Route
+            path="edit"
+            element={
+              <EditNote
+                onSubmit={onUpdateNote}
+                onAddTag={addTag}
+                avaliableTags={tags}
+              />
+            }
+          />
         </Route>
 
         <Route path="*" element={<Navigate to="/" />} />
